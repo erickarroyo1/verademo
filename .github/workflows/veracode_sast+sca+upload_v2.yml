@@ -37,16 +37,22 @@ jobs:
       name: pipeline scan
       steps:
         - name: Build with Maven # Compiling the .war binary from the checked out repo source code to upload to the scanner in the next step
-          id: Build with Maven
+          id: Build_with_Maven
           run: mvn -B package --file app/pom.xml
-          
+
+        # get the compiled binary from a previous job
+        - name: get archive
+          uses: actions/download-artifact@v3
+          with:
+            name: verademo.war
+
         - name: pipeline-scan action step
           id: pipeline-scan
           uses: veracode/Veracode-pipeline-scan-action@pipeline-scan-beta-v0.0.4
           with:
             vid: ${{ secrets.VERACODE_API_ID }}
             vkey: ${{ secrets.VERACODE_API_KEY }}
-            file: "app/target/verademo.war" 
+            file: "verademo.war" 
             fail_build: false
 
 # This step will import the flaws from the step above
