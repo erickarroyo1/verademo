@@ -71,6 +71,7 @@ jobs:
     
     steps:        
       - name: Check out main branch
+        id: checkout
         uses: actions/checkout@v3
         with:
           repository: ''
@@ -81,9 +82,11 @@ jobs:
         
     # Zip in case you want to upload a zip file and put it into filepath parameter.
       - name: Zip App 
+        id: Zip
         run: zip -r veracode-scan-target.zip ./
         
       - name: Veracode Upload And Scan
+        id: Sast_Scan
         uses: veracode/veracode-uploadandscan-action@0.2.6
         with:
           appname: 'VeraDemo'
@@ -95,6 +98,9 @@ jobs:
           vid: '${{ secrets.VERACODE_API_ID }}'
           vkey: '${{ secrets.VERACODE_API_KEY }}'
           criticality: 'Medium'
+          # scantimeout: 0 , indicates the time to wait for complete scans where 0 is infinite with retry interval set in scanpollinginterval with default of 120 seconds. Use this to introduce break build functionality
+          scantimeout: 0 
+          #scanpollinginterval: 60 y default is 120. 
   #          createsandbox: 'true'
   #          sandboxname: 'SANDBOXNAME'
   #          scantimeout: 0
@@ -104,6 +110,7 @@ jobs:
   
       # Slack Integration
       - name: Slack Notification
+        id: Slack_Notification
         uses: act10ns/slack@v2.0.0
         if: always() # Esto asegura que se envíe una notificación independientemente del resultado del trabajo
         with:
