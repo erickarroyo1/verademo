@@ -20,7 +20,7 @@ permissions:
 
 jobs:
   # This workflow contains a job to build and submit pipeline scan, you will need to customize the build process accordingly and make sure the artifact you build is used as the file input to the pipeline scan file parameter
-  build-and-pipeline-scan:
+  build-and-scan:
     # The type of runner that the job will run on
     permissions:
       contents: read # for actions/checkout to fetch code
@@ -56,3 +56,12 @@ jobs:
       with:
         # Path to SARIF file relative to the root of the repository
         sarif_file: veracode-results.sarif
+
+    # Integración de notificaciones Slack
+    - name: Slack Notification
+      uses: act10ns/slack@v2.0.0
+      if: always() # Esto asegura que se envíe una notificación independientemente del resultado del trabajo
+      with:
+        status: ${{ job.status }}
+        steps: ${{ toJson(steps) }}
+        webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
