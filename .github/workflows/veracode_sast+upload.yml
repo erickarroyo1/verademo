@@ -97,9 +97,9 @@ jobs:
           filepath: 'app/target/verademo.war'        
           vid: '${{ secrets.VERACODE_API_ID }}'
           vkey: '${{ secrets.VERACODE_API_KEY }}'
-          criticality: 'Medium'
-          # scantimeout: 0 , indicates the time to wait for complete scans where 0 is infinite with retry interval set in scanpollinginterval with default of 120 seconds. Use this to introduce break build functionality
-          scantimeout: 0 
+          criticality: 'VeryHigh'
+          # scantimeout: 0 , indicates the time to wait for complete scans where 0 is no wait for scans complete and retry interval set in scanpollinginterval with default of 120 seconds. Use this to introduce break build functionality, take a look over the cost.
+          scantimeout: 120 
           #scanpollinginterval: 60 y default is 120. 
   #          createsandbox: 'true'
   #          sandboxname: 'SANDBOXNAME'
