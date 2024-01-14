@@ -36,19 +36,19 @@ jobs:
           id: build
           run: mvn -B package --file app/pom.xml
 
-        - name: Upload WAR file as artifact
-          id: upload_artifact_after_build
-          uses: actions/upload-artifact@v3
-          with:
-            name: verademo-war
-            path: app/target/verademo.war
+#       - name: Upload WAR file as artifact
+#         id: upload_artifact_after_build
+#         uses: actions/upload-artifact@v3
+#         with:
+#           name: verademo-war
+#           path: app/target/verademo.war
 
         # get the compiled binary from a previous job
-        - name: get archive
-          id: get_archive
-          uses: actions/download-artifact@v3
-          with:
-            name: verademo.war
+#        - name: get archive
+#          id: get_archive
+#          uses: actions/download-artifact@v3
+#          with:
+#            name: verademo.war
 
         - name: pipeline-scan action step
           id: pipeline-scan
@@ -56,7 +56,7 @@ jobs:
           with:
             vid: ${{ secrets.VERACODE_API_ID }}
             vkey: ${{ secrets.VERACODE_API_KEY }}
-            file: "verademo.war" 
+            file: "app/target/verademo.war" 
             fail_build: false
 
 # This step will import the flaws from the step above
