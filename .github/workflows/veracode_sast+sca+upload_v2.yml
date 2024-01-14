@@ -15,20 +15,9 @@ permissions:
   contents: read
 
 jobs:
-  checkout:
-    name: Static Analysis into pipeline
-    runs-on: ubuntu-latest
-    steps:
-
-      - name: Check out main branch
-        id: checkout
-        uses: actions/checkout@v3
-        with:
-          repository: ''
         
 # This workflow contains a job to build and submit pipeline scan, you will need to customize the build process accordingly and make sure the artifact you build is used as the file input to the pipeline scan file parameter
   static_analysis_into_pipeline:
-      needs: checkout
       permissions:
         contents: read # for actions/checkout to fetch code
         security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
@@ -36,12 +25,20 @@ jobs:
       runs-on: ubuntu-latest
       name: pipeline scan
       steps:
+
+        - name: Check out main branch
+          id: checkout
+          uses: actions/checkout@v3
+          with:
+            repository: ''
+          
         - name: Build with Maven # Compiling the .war binary from the checked out repo source code to upload to the scanner in the next step
-          id: Build_with_Maven
+          id: build
           run: mvn -B package --file app/pom.xml
 
         # get the compiled binary from a previous job
         - name: get archive
+          id: get_archive
           uses: actions/download-artifact@v3
           with:
             name: verademo.war
