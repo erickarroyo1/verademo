@@ -86,11 +86,14 @@ jobs:
       uses: veracode/veracode-uploadandscan-action@0.2.6
       with:
         appname: 'VeraDemo'
-        createprofile: false
+        # createprofile: false, indicates that the application not will be created.
+        createprofile: true
+        # Filepath can be a compiled file (jar or war) or zip file with code.
         filepath: 'veracode-scan-target.zip'
         vid: '${{ secrets.VERACODE_API_ID }}'
         vkey: '${{ secrets.VERACODE_API_KEY }}'
         criticality: 'Medium'
+        fail_build: true
 #          createsandbox: 'true'
 #          sandboxname: 'SANDBOXNAME'
 #          scantimeout: 0
