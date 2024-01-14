@@ -75,7 +75,8 @@ jobs:
     - uses: actions/checkout@v3
       with:
         repository: ''
-
+        
+    # Zip in case you want to upload a zip file.
     - run: zip -r veracode-scan-target.zip ./
       
     - name: Veracode Upload And Scan
@@ -85,7 +86,8 @@ jobs:
         # createprofile: false, indicates that the application not will be created.
         createprofile: true
         # Filepath can be a compiled file (jar or war) or zip file with code.
-        filepath: 'veracode-scan-target.zip'
+        #filepath: 'veracode-scan-target.zip' #Put attention of this because if there is incompatible modules, the scans will be not run.
+        filepath: 'app/target/verademo.war'        
         vid: '${{ secrets.VERACODE_API_ID }}'
         vkey: '${{ secrets.VERACODE_API_KEY }}'
         criticality: 'Medium'
