@@ -1,0 +1,138 @@
+
+name: Veracode SAST and SCA - Upload and Scan
+
+on:
+  # Scan on Push
+  push:
+    branches: [ "main" ]
+  # Scan on pull (optional)
+#  pull_request:
+#   # The branches below must be a subset of the branches above
+#    branches: [ "main" ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+permissions:
+  contents: read
+
+jobs:
+  static_analysis_into_pipeline:
+    name: Static Analysis into pipeline
+    runs-on: ubuntu-latest
+  build:
+      permissions:
+        contents: read # for actions/checkout to fetch code
+        security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+        actions: read # only required for a private repository by github/codeql-action/upload-sarif to get the Action run status
+      runs-on: ubuntu-latest
+      name: pipeline Build
+      steps:
+
+      - name: Check out main branch
+        id: checkout
+        uses: actions/checkout@v3
+        with:
+          repository: ''
+      - name: Build with Maven # Compiling the .war binary from the checked out repo source code to upload to the scanner in the next step
+        run: mvn -B package --file app/pom.xml
+        
+# This workflow contains a job to build and submit pipeline scan, you will need to customize the build process accordingly and make sure the artifact you build is used as the file input to the pipeline scan file parameter
+  pipeline_scan:
+      needs: build
+      permissions:
+        contents: read # for actions/checkout to fetch code
+        security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+        actions: read # only required for a private repository by github/codeql-action/upload-sarif to get the Action run status
+      runs-on: ubuntu-latest
+      name: pipeline scan
+      steps:
+        - name: get archive
+          uses: actions/download-artifact@v3
+          with:
+            name: verademo.war
+            
+        - name: pipeline-scan action step
+          id: pipeline-scan
+          uses: veracode/Veracode-pipeline-scan-action@pipeline-scan-beta-v0.0.4
+          with:
+            vid: ${{ secrets.VERACODE_API_ID }}
+            vkey: ${{ secrets.VERACODE_API_KEY }}
+            file: "verademo.war" 
+            fail_build: false
+
+# This step will import the flaws from the step above
+  import-issues_to_github_from_pipeline_scan:
+    needs: pipeline_scan
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: get scan results
+        uses: actions/download-artifact@v3
+        with:
+          name: filtered-results
+
+      - name: import flaws as issues
+        uses: veracode/veracode-flaws-to-issues@v2.1.19
+        with:
+          scan-results-json: 'filtered_results.json'
+
+      # Integración de notificaciones Slack
+      - name: Slack Notification
+        uses: act10ns/slack@v2.0.0
+        if: always() # Esto asegura que se envíe una notificación independientemente del resultado del trabajo
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  static_analysis_upload_and_scan:
+    name: Static Analysis (upload into Veracode condole and Scan)
+    runs-on: ubuntu-latest
+    
+    steps:        
+      - name: Check out main branch
+        id: checkout
+        uses: actions/checkout@v3
+        with:
+          repository: ''
+        
+      - name: Build with Maven # Compiling the .war binary from the checked out repo source code to upload to the scanner in the next step
+        run: mvn -B package --file app/pom.xml
+        
+    # Zip in case you want to upload a zip file and put it into filepath parameter.
+      - name: Zip App 
+        id: Zip
+        run: zip -r veracode-scan-target.zip ./
+        
+      - name: Veracode Upload And Scan
+        id: Sast_Scan
+        uses: veracode/veracode-uploadandscan-action@0.2.6
+        with:
+          appname: 'VeraDemo'
+          # createprofile: false, indicates that the application not will be created.
+          createprofile: true
+          # Filepath can be a compiled file (jar or war) or zip file with code.
+          #filepath: 'veracode-scan-target.zip' #Put attention of this because if there is incompatible modules, the scans will be not run.
+          filepath: 'app/target/verademo.war'        
+          vid: '${{ secrets.VERACODE_API_ID }}'
+          vkey: '${{ secrets.VERACODE_API_KEY }}'
+          criticality: 'VeryHigh'
+          # scantimeout: 0 , indicates the time to wait for complete scans where 0 is no wait for scans complete and retry interval set in scanpollinginterval with default of 120 seconds. Use this to introduce break build functionality, take a look over the cost.
+          scantimeout: 120 
+          #scanpollinginterval: 60 y default is 120. 
+  #          createsandbox: 'true'
+  #          sandboxname: 'SANDBOXNAME'
+  #          scantimeout: 0
+  #          exclude: '*.js'
+  #          include: '*.war'
+  #          criticality: 'VeryHigh'
+  
+      # Slack Integration
+      - name: Slack Notification
+        id: Slack_Notification
+        uses: act10ns/slack@v2.0.0
+        if: always() # Esto asegura que se envíe una notificación independientemente del resultado del trabajo
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
