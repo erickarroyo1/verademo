@@ -79,6 +79,8 @@ jobs:
           webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
 
   static_analysis_upload_and_scan:
+  #needs indicate that depends on previous step
+    needs: import-issues_to_github_from_pipeline_scan
     name: Static Analysis (upload into Veracode condole and Scan)
     runs-on: ubuntu-latest
     
