@@ -60,7 +60,7 @@ jobs:
         # Path to SARIF file relative to the root of the repository
         sarif_file: veracode-results.sarif
 
-    # Integración de notificaciones Slack
+    # # Slack Integration
     - name: Slack Notification
       uses: act10ns/slack@v2.0.0
       if: always() # Esto asegura que se envíe una notificación independientemente del resultado del trabajo
