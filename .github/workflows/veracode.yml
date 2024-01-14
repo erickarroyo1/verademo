@@ -13,8 +13,6 @@ on:
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ "main" ]
-  schedule:
-    - cron: '21 9 * * 5'
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 permissions:
@@ -46,6 +44,7 @@ jobs:
       with:
         java-version: 8
         distribution: 'temurin'
+      #Command to scan with veracode by Ernesto.
     - run: java -jar pipeline-scan.jar --veracode_api_id "${{secrets.VERACODE_API_ID}}" --veracode_api_key "${{secrets.VERACODE_API_KEY}}" --fail_on_severity="Very High, High" --file veracode-scan-target.zip
       continue-on-error: true
     - name: Convert pipeline scan output to SARIF format
