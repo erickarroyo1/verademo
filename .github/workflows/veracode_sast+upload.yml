@@ -70,39 +70,43 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:        
-
-    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it and copies all sources into ZIP file for submitting for analysis. Replace this section with your applications build steps
-    - uses: actions/checkout@v3
-      with:
-        repository: ''
+      - name: Check out main branch
+        uses: actions/checkout@v3
+        with:
+          repository: ''
         
-    # Zip in case you want to upload a zip file.
-    - run: zip -r veracode-scan-target.zip ./
-      
-    - name: Veracode Upload And Scan
-      uses: veracode/veracode-uploadandscan-action@0.2.6
-      with:
-        appname: 'VeraDemo'
-        # createprofile: false, indicates that the application not will be created.
-        createprofile: true
-        # Filepath can be a compiled file (jar or war) or zip file with code.
-        #filepath: 'veracode-scan-target.zip' #Put attention of this because if there is incompatible modules, the scans will be not run.
-        filepath: 'app/target/verademo.war'        
-        vid: '${{ secrets.VERACODE_API_ID }}'
-        vkey: '${{ secrets.VERACODE_API_KEY }}'
-        criticality: 'Medium'
-#          createsandbox: 'true'
-#          sandboxname: 'SANDBOXNAME'
-#          scantimeout: 0
-#          exclude: '*.js'
-#          include: '*.war'
-#          criticality: 'VeryHigh'
-
-    # Slack Integration
-    - name: Slack Notification
-      uses: act10ns/slack@v2.0.0
-      if: always() # Esto asegura que se envíe una notificación independientemente del resultado del trabajo
-      with:
-        status: ${{ job.status }}
-        steps: ${{ toJson(steps) }}
-        webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - name: Build with Maven # Compiling the .war binary from the checked out repo source code to upload to the scanner in the next step
+        run: mvn -B package --file app/pom.xml
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it and copies all sources into ZIP file for submitting for analysis. Replace this section with your applications build steps
+        
+    # Zip in case you want to upload a zip file and put it into filepath parameter.
+      - name: Zip App 
+        run: zip -r veracode-scan-target.zip ./
+        
+      - name: Veracode Upload And Scan
+        uses: veracode/veracode-uploadandscan-action@0.2.6
+        with:
+          appname: 'VeraDemo'
+          # createprofile: false, indicates that the application not will be created.
+          createprofile: true
+          # Filepath can be a compiled file (jar or war) or zip file with code.
+          #filepath: 'veracode-scan-target.zip' #Put attention of this because if there is incompatible modules, the scans will be not run.
+          filepath: 'app/target/verademo.war'        
+          vid: '${{ secrets.VERACODE_API_ID }}'
+          vkey: '${{ secrets.VERACODE_API_KEY }}'
+          criticality: 'Medium'
+  #          createsandbox: 'true'
+  #          sandboxname: 'SANDBOXNAME'
+  #          scantimeout: 0
+  #          exclude: '*.js'
+  #          include: '*.war'
+  #          criticality: 'VeryHigh'
+  
+      # Slack Integration
+      - name: Slack Notification
+        uses: act10ns/slack@v2.0.0
+        if: always() # Esto asegura que se envíe una notificación independientemente del resultado del trabajo
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
